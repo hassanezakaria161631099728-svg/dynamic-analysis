@@ -3,7 +3,7 @@ w 20
 L 6
 E 2.0E11
 I 8.5E-6
-FLOORS 10
+FLOORS 13
 Mass1  710.02
 Mass2  703.74
 Mass3  705.94
