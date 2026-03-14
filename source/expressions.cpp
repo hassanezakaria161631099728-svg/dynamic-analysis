@@ -112,3 +112,108 @@ multiplyscamat(double a,
 
     return C;
 }
+
+// ===== Helpers =====
+
+static std::vector<double>
+matVec(const Matrix& A,
+       const std::vector<double>& x)
+{
+    int n = A.size();
+    std::vector<double> r(n,0.0);
+
+    for(int i=0;i<n;i++)
+        for(int j=0;j<n;j++)
+            r[i] += A[i][j]*x[j];
+
+    return r;
+}
+
+static double dot(const std::vector<double>& a,
+                  const std::vector<double>& b)
+{
+    double s=0;
+    for(size_t i=0;i<a.size();i++)
+        s += a[i]*b[i];
+    return s;
+}
+
+static void normalize(std::vector<double>& x)
+{
+    double n = std::sqrt(dot(x,x));
+    if(n < 1e-12) return;
+
+    for(double& v : x)
+        v /= n;
+}
+
+// ===== POWER ITERATION → eigenvector + eigenvalue =====
+
+static void
+powerMode(const Matrix& A,
+          std::vector<double>& vec,
+          double& lambda)
+{
+    int n = A.size();
+
+    vec.assign(n,1.0);
+    normalize(vec);
+
+    for(int k=0;k<200;k++)
+    {
+        auto y = matVec(A,vec);
+
+        lambda = dot(vec,y);      // Rayleigh
+
+        vec = y;
+        normalize(vec);
+    }
+}
+
+// ===== Deflation =====
+
+static void
+deflate(Matrix& A,
+        const std::vector<double>& v,
+        double lambda)
+{
+    int n = A.size();
+
+    for(int i=0;i<n;i++)
+        for(int j=0;j<n;j++)
+            A[i][j] -= lambda * v[i] * v[j];
+}
+
+// ===== MAIN =====
+
+void eigenDecomposition(
+    const Matrix& A,
+    Matrix& B,
+    Matrix& C)
+{
+    int n = A.size();
+
+    B.assign(n, std::vector<double>(n,0.0));
+    C.assign(n, std::vector<double>(n,0.0));
+
+    Matrix work = A;
+
+    for(int k=0;k<n;k++)
+    {
+        std::vector<double> vec;
+        double lambda;
+
+        powerMode(work, vec, lambda);
+
+        // store eigenvector as column k
+        for(int i=0;i<n;i++)
+            B[i][k] = vec[i];
+
+        // store eigenvalue on diagonal
+        C[k][k] = lambda;
+
+        // remove this mode
+        deflate(work, vec, lambda);
+    }
+}
+
